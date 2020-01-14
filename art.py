@@ -136,23 +136,22 @@ def draw_cone(gp_frame, circles: tuple):
         draw_circle(gp_frame, origin, radius_values[index], 20)
 
 def draw_tornado(gp_frame, circles: list, variance: float):
+    circles_with_perlin_noise = zip_tuples_with_1D_perlin_noise(circles)
+    for index, circle in enumerate(circles_with_perlin_noise):
+        x, y, z, radius, noise = circle[0], circle[1], circle[2], circle[3], circle[4]
+        origin = (x, y, z)
+        radius = radius + noise * radius * variance
+        draw_circle(gp_frame=gp_frame, center=origin, radius=radius, segments=20)
+
+def zip_tuples_with_1D_perlin_noise(tuples: list) -> list:
     baseNoise = perlin.BaseNoise()
     simplexNoise = perlin.SimplexNoise()
-    perlin_noise = []
-    for index, value in enumerate(circles):
+    zipped_tuples = []
+    for index, item in enumerate(tuples):
         noise = simplexNoise.noise2(index, 0)
-        perlin_noise.append(noise)
-
-    print("perlin_noise:")
-    print(perlin_noise)
-    print("circles:")
-    print(circles)
-
-    for index, circle in enumerate(circles):
-        x, y, z, radius = circle[0], circle[1], circle[2], circle[3]
-        origin = (x, y, z)
-        radius = radius + perlin_noise[index] * radius * variance
-        draw_circle(gp_frame=gp_frame, center=origin, radius=radius, segments=20)
+        new_tuple = (*item, noise)
+        zipped_tuples.append(new_tuple)
+    return zipped_tuples
 
 
 #def draw_curve_of_pursuit(top_left: tuple, starting_distance: int, steps: int, step_length: int):
