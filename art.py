@@ -7,6 +7,7 @@ import bmesh
 from mathutils import Vector
 import math
 from math import sin, cos
+from random import randint
 import numpy as np
 import perlin
 
@@ -153,7 +154,6 @@ def zip_tuples_with_1D_perlin_noise(tuples: list) -> list:
         zipped_tuples.append(new_tuple)
     return zipped_tuples
 
-
 #def draw_curve_of_pursuit(top_left: tuple, starting_distance: int, steps: int, step_length: int):
 #    top_right = tuple(np.add((starting_distance,0,0), top_left))
 #    bottom_left = tuple(np.subtract(top_left, (0, starting_distance, 0)))
@@ -194,6 +194,31 @@ def main():
     circles = get_cone_circles(center=(0,0,0), start_radius=1, stop_radius=80, steps=100, step_size=25, scale_z=0.05)
     # draw_cone(gp_frame, circles)
     draw_tornado(gp_frame=gp_frame, circles=circles, variance=0.3)
+
+    # Draw tornadoes over an array of x,y points
+    tornado_centers = []
+    for i in range(100, 5000, 150):
+        for j in range(100, 5000, 150):
+            tornado_centers.append((i,j,0))
+
+    # print('tornado centers')
+    # print(tornado_centers)
+
+    gp_layer = init_grease_pencil()
+    gp_frame = gp_layer.frames.new(0)
+    for center in tornado_centers:
+        start_radius = randint(1, 100)
+        stop_radius = randint(1, 100)
+        steps = randint(30, 100)
+        step_size = 25
+        scale_z = randint(1, 10) / 100
+        variance = randint(1, 4) / 10
+
+        circles = get_cone_circles(center=center, start_radius=start_radius,
+                                   stop_radius=stop_radius, steps=steps,
+                                   step_size=step_size, scale_z=scale_z)
+
+        draw_tornado(gp_frame=gp_frame, circles=circles, variance=variance)
 
 if __name__ == '__main__':
     main()
