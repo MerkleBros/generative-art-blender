@@ -7,7 +7,7 @@ import bmesh
 from mathutils import Vector
 import math
 from math import sin, cos
-from random import randint
+from random import randint, choice
 import numpy as np
 import perlin
 
@@ -183,6 +183,93 @@ def zip_tuples_with_1D_perlin_noise(tuples: list) -> list:
 #    # Draw a line cos(theta) = step_length / draw_length -> draw_length = step_length / cos(theta)
 #    # Find theta as cos(theta) = (y_current - y_forecast) / (x_current - x_forecast)
 
+def draw_2d_diffusion_limited_aggregation(gp_layer, origin: tuple, size_in_x: int, size_in_y: int, source_coordinates: list, occupied_coordinates: list, candidate_rules: list, movement_rules: list, particle_number: int, scale: int):
+    # Make the 2D array of possible points to draw on
+    x,y,z = origin[0], origin[1], origin[2]
+    points = []
+    for new_x in range(x, size_in_x, 1):
+        for new_y in range(y, size_in_y, 1):
+            new_point = (new_x, new_y, z)
+            points.append(new_point)
+
+    # Input coordinates need to exist in the set of possible points
+    if not all(point in points for point in source_coordinates) or \
+       not all(point in points for point in occupied_coordinates):
+        return
+
+    # TODO Remove source coordinates that are occupied
+
+    # Calculate candidate_coordinates where a point could be added to the occupied_coordinates
+    # Could put this into a function for finding unoccupied adjacent neighbors given a list of points
+    candidate_coordinates = set()
+    if "adjacent" in candidate_rules:
+        for point in occupied_coordinates:
+            x, y, z = point[0], point[1], point[2]
+            candidate_points = []
+            candidate_points.append((x - 1, y, z))
+            candidate_points.append((x + 1, y, z))
+            candidate_points.append((x, y - 1, z))
+            candidate_points.append((x, y + 1, z))
+
+            # Take out candidates that are already occupied or are not in the set of possible points
+            unoccupied_candidate_points = [candidate for candidate in candidate_points \
+                                     if candidate not in occupied_coordinates]
+            valid_candidate_points = [candidate for candidate in unoccupied_candidate_points \
+                                      if candidate in points]
+
+            candidate_coordinates.update(valid_candidate_points)
+
+    # generate particle at source, assuming source coordinates and candidate coordinates are valid
+    for number in range(particle_number):
+        if len(candidate_coordinates) == 0 or len(source_coordinates) == 0:
+            break
+
+        particle_coordinate = choice(source_coordinates)
+
+        while particle_coordinate not in candidate_coordinates:
+            x,y,z = particle_coordinate[0], particle_coordinate[1], particle_coordinate[2]
+
+            # Move particle according to movement rule
+            possible_movement_coordinates = []
+            if "adjacent" in movement_rules or not movement_rules:
+                possible_movement_coordinates.append((x - 1, y, z), (x + 1, y, z), (x, y - 1, z), (x, y + 1, z))
+            if "diagonal" in movement_rules:
+                possible_movement_coordinates.append((x - 1, y - 1, z), (x - 1, y + 1, z), (x + 1, y - 1, z), (x + 1, y + 1, z))
+
+            # Fix possible movement coordinates that are outside of the drawing area
+            for index, point in enumerate(possible_movement_coordinates):
+                if point[0] > size_in_x - 1:
+                    if "wrap" in movement_rules:
+                        possible_movement_coordinates[index] = (0, point[1], point[2])
+                    if "edge_stop" in movement_rules:
+                        possible_movement_coordinates[index] = (size_in_x - 1, point[1], point[2])
+                if point[0] < 0:
+                    if "wrap" in movement_rules:
+                        possible_movement_coordinates[index] = (size_in_x - 1, point[1], point[2])
+                    if "edge_stop" in movement_rules:
+                        possible_movement_coordinates[index] = (0, point[1], point[2])
+                if point[1] > size_in_y - 1:
+                    if "wrap" in movement_rules:
+                        possible_movement_coordinates[index] = (point[0], 0, point[2])
+                    if "edge_stop" in movement_rules:
+                        possible_movement_coordinates[index] = (point[0], size_in_y - 1, point[2])
+                if point[1] < 0:
+                    if "wrap" in movement_rules:
+                        possible_movement_coordinates[index] = (point[0], size_in_y - 1, point[2])
+                    if "edge_stop" in movement_rules:
+                        possible_movement_coordinates[index] = (point[0], 0, point[2])
+
+            particle_coordinate = choice(possible_movement_coordinates)
+
+        if particle_coordinate in source_coordinates:
+            source_coordinates.remove(particle_coordinate)
+
+        occupied_coordinates.append(particle_coordinate)
+        candidate_coordinates.remove(particle_coordinate)
+        # TODO: Update candidate coordinates based on candidate rules
+
+
+    # TODO draw shapes at all occupied coordinates
 
 def main():
     gp_layer = init_grease_pencil()
