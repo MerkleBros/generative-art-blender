@@ -4,11 +4,19 @@
 #
 #    pip-compile
 #
-astroid==2.3.3            # via pylint
-isort==4.3.21             # via pylint
-lazy-object-proxy==1.4.3  # via astroid
-mccabe==0.6.1             # via pylint
-pylint==2.4.4
-six==1.14.0               # via astroid
-typed-ast==1.4.1          # via astroid
-wrapt==1.11.2             # via astroid
+astroid==4.0.4
+    # via pylint
+dill==0.4.1
+    # via pylint
+isort==9.0.2
+    # via pylint
+mccabe==0.6.1
+    # via pylint
+mypy-extensions==1.1.0
+    # via isort
+platformdirs==4.14.3
+    # via pylint
+pylint==4.0.9
+    # via -r requirements.in
+tomlkit==0.15.2
+    # via pylint
